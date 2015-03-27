@@ -56,15 +56,6 @@ import android.widget.TabHost;
 import android.widget.TabHost.TabSpec;
 import android.widget.TextView;
 
-import com.google.android.gms.maps.CameraUpdateFactory;
-import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.GoogleMap.OnCameraChangeListener;
-import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.CameraPosition;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.LatLngBounds;
-import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.maps.model.PolylineOptions;
 import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.GraphView.GraphViewData;
 import com.jjoe64.graphview.GraphViewSeries;
@@ -124,9 +115,7 @@ public class DetailActivity extends FragmentActivity implements Constants {
     MenuItem recomputeMenuItem = null;
 
     View mapViewLayout = null;
-    GoogleMap map = null;
     View mapView = null;
-    LatLngBounds mapBounds = null;
     AsyncTask<String, String, Route> loadRouteTask = null;
     LinearLayout graphTab = null;
     GraphView graphView;
@@ -172,24 +161,7 @@ public class DetailActivity extends FragmentActivity implements Constants {
         sport = (TitleSpinner) findViewById(R.id.summary_sport);
         notes = (EditText) findViewById(R.id.notes_text);
         notes.setHint(getString(R.string.notes_hint));
-        map = ((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map))
-                .getMap();
 
-        if (map != null) {
-            map.setOnCameraChangeListener(new OnCameraChangeListener() {
-
-                @Override
-                public void onCameraChange(CameraPosition arg0) {
-                    if (mapBounds != null) {
-                        // Move camera.
-                        map.moveCamera(CameraUpdateFactory.newLatLngBounds(mapBounds, 5));
-                        // Remove listener to prevent position reset on camera
-                        // move.
-                        map.setOnCameraChangeListener(null);
-                    }
-                }
-            });
-        }
         saveButton.setOnClickListener(saveButtonClick);
         uploadButton.setOnClickListener(uploadButtonClick);
         if (this.mode == MODE_SAVE) {
@@ -811,14 +783,7 @@ public class DetailActivity extends FragmentActivity implements Constants {
     }
 
     class Route {
-        final PolylineOptions path = new PolylineOptions();
-        final LatLngBounds.Builder bounds = new LatLngBounds.Builder();
-        final ArrayList<MarkerOptions> markers = new ArrayList<MarkerOptions>(10);
-
-        Route() {
-            path.color(Color.RED);
-            path.width(3);
-        }
+        
     }
 
     class GraphProducer {
@@ -1207,117 +1172,7 @@ public class DetailActivity extends FragmentActivity implements Constants {
 
             @Override
             protected Route doInBackground(String... params) {
-
-                int cnt = 0;
-                Route route = null;
-                Cursor c = mDB.query(DB.LOCATION.TABLE, from, "activity_id == " + mID,
-                        null, null, null, "_id", null);
-                if (c.moveToFirst()) {
-                    route = new Route();
-                    double acc_distance = 0;
-                    double tot_distance = 0;
-                    int cnt_distance = 0;
-                    LatLng lastLocation = null;
-                    long lastTime = 0;
-                    int lastLap = -1;
-                    int hr = 0;
-                    do {
-                        cnt++;
-                        LatLng point = new LatLng(c.getDouble(0), c.getDouble(1));
-                        route.path.add(point);
-                        route.bounds.include(point);
-                        int type = c.getInt(2);
-                        long time = c.getLong(3);
-                        int lap = c.getInt(4);
-                        if (!c.isNull(5))
-                            hr = c.getInt(5);
-                        MarkerOptions m;
-                        switch (type) {
-                            case DB.LOCATION.TYPE_START:
-                            case DB.LOCATION.TYPE_END:
-                            case DB.LOCATION.TYPE_PAUSE:
-                            case DB.LOCATION.TYPE_RESUME:
-                                if (type == DB.LOCATION.TYPE_PAUSE)
-                                {
-                                    if (lap != lastLap) {
-                                        graphData.clear(tot_distance);
-                                    } else if (lastTime != 0 && lastLocation != null) {
-                                        float res[] = {
-                                            0
-                                        };
-                                        Location.distanceBetween(lastLocation.latitude,
-                                                lastLocation.longitude, point.latitude,
-                                                point.longitude, res);
-                                        graphData.addObservation(time - lastTime, res[0],
-                                                tot_distance, hr);
-                                        // hrList.clear();
-                                        graphData.clear(tot_distance);
-                                    }
-                                    lastLap = lap;
-                                    lastTime = 0;
-                                }
-                                else if (type == DB.LOCATION.TYPE_RESUME)
-                                {
-                                    lastLap = lap;
-                                    lastTime = time;
-                                }
-                                m = new MarkerOptions();
-                                m.position((lastLocation = point));
-                                switch (type) {
-                                    case DB.LOCATION.TYPE_START:
-                                        m.title(getResources().getString(R.string.start));
-                                        break;
-                                    case DB.LOCATION.TYPE_END:
-                                        m.title(getResources().getString(R.string.stop));
-                                        break;
-                                    case DB.LOCATION.TYPE_PAUSE:
-                                        m.title(getResources().getString(R.string.pause));
-                                        break;
-                                    case DB.LOCATION.TYPE_RESUME:
-                                        m.title(getResources().getString(R.string.resume));
-                                        break;
-                                }
-                                m.snippet(null);
-                                m.draggable(false);
-                                route.markers.add(m);
-                                break;
-                            case DB.LOCATION.TYPE_GPS:
-                                float res[] = {
-                                    0
-                                };
-                                Location.distanceBetween(lastLocation.latitude,
-                                        lastLocation.longitude, point.latitude, point.longitude,
-                                        res);
-                                acc_distance += res[0];
-                                tot_distance += res[0];
-
-                                if (lap != lastLap) {
-                                    graphData.clear(tot_distance);
-                                } else if (lastTime != 0) {
-                                    graphData.addObservation(time - lastTime, res[0], tot_distance,
-                                            hr);
-                                }
-                                lastLap = lap;
-                                lastTime = time;
-
-                                if (acc_distance >= formatter.getUnitMeters()) {
-                                    cnt_distance++;
-                                    acc_distance = 0;
-                                    m = new MarkerOptions();
-                                    m.position(point);
-                                    m.title("" + cnt_distance + " " + formatter.getUnitString());
-                                    m.snippet(null);
-                                    m.draggable(false);
-                                    route.markers.add(m);
-                                }
-                                lastLocation = point;
-                                break;
-                        }
-                    } while (c.moveToNext());
-                    System.err.println("Finished loading " + cnt + " points");
-                }
-                c.close();
-                return route;
+                return new Route();
             }
 
             @Override
@@ -1344,19 +1199,6 @@ public class DetailActivity extends FragmentActivity implements Constants {
                         hrzonesBarLayout.setVisibility(View.GONE);
                     }
 
-                    if (map != null) {
-                        map.addPolyline(route.path);
-                        mapBounds = route.bounds.build();
-                        System.err.println("Added polyline");
-                        int cnt = 0;
-                        for (MarkerOptions m : route.markers) {
-                            cnt++;
-                            map.addMarker(m);
-                        }
-                        System.err.println("Added " + cnt + " markers");
-
-                        route = new Route(); // release mem for old...
-                    }
                 }
             }
         }.execute("kalle");

@@ -46,7 +46,6 @@ import org.runnerup.tracker.component.TrackerGPS;
 import org.runnerup.tracker.component.TrackerHRM;
 import org.runnerup.tracker.component.TrackerReceiver;
 import org.runnerup.tracker.component.TrackerTTS;
-import org.runnerup.tracker.component.TrackerWear;
 import org.runnerup.tracker.filter.PersistentGpsLoggerListener;
 import org.runnerup.util.Formatter;
 import org.runnerup.util.HRZones;
@@ -79,7 +78,6 @@ public class Tracker extends android.app.Service implements
     TrackerTTS trackerTTS = (TrackerTTS) components.addComponent(new TrackerTTS());
     TrackerReceiver trackerReceiver = (TrackerReceiver) components.addComponent(
             new TrackerReceiver(this));
-    TrackerWear trackerWear; // created if version is sufficient
 
     /**
      * Work-around for http://code.google.com/p/android/issues/detail?id=23937
@@ -134,11 +132,6 @@ public class Tracker extends android.app.Service implements
                 new ForegroundNotificationDisplayStrategy(this));
 
         wakeLock(false);
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
-            // >= 4.3
-            trackerWear = (TrackerWear) components.addComponent(new TrackerWear(this));
-        }
     }
 
     @Override
@@ -335,10 +328,6 @@ public class Tracker extends android.app.Service implements
 
         // connect workout and tracker
         workout.setTracker(this);
-
-        /** Add Wear to live loggers if it's active */
-        if (components.getResultCode(TrackerWear.NAME) == TrackerComponent.ResultCode.RESULT_OK)
-            liveLoggers.add(trackerWear);
 
         /**
          * create the DB activity

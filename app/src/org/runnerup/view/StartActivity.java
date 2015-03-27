@@ -68,7 +68,6 @@ import org.runnerup.notification.NotificationStateManager;
 import org.runnerup.tracker.GpsInformation;
 import org.runnerup.tracker.Tracker;
 import org.runnerup.tracker.component.TrackerHRM;
-import org.runnerup.tracker.component.TrackerWear;
 import org.runnerup.util.Formatter;
 import org.runnerup.util.SafeParse;
 import org.runnerup.util.TickListener;
@@ -696,15 +695,6 @@ public class StartActivity extends Activity implements TickListener, GpsInformat
                 } else {
                     hrButton.setEnabled(true);
                     hrValueText.setText("?");
-                }
-            }
-            if (mTracker.isComponentConfigured(TrackerWear.NAME)) {
-                hideWear = false;
-                if (mTracker.isComponentConnected(TrackerWear.NAME)) {
-                    wearValueText.setVisibility(View.GONE);
-                } else {
-                    wearValueText.setText("?");
-                    wearValueText.setVisibility(View.VISIBLE);
                 }
             }
         }
