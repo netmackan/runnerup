@@ -5,6 +5,11 @@ android {
     compileSdkVersion 20
     buildToolsVersion '20.0.0'
 
+    defaultConfig {
+        minSdkVersion 8
+        targetSdkVersion 18
+    }
+    
     sourceSets {
         main {
             manifest.srcFile 'AndroidManifest.xml'
@@ -16,28 +21,58 @@ android {
             assets.srcDirs = ['assets']
         }
 
-        froyo {
-            manifest.srcFile 'froyo/AndroidManifest.xml'
-            java.srcDirs = ['froyo/java']
+        froyoGooglemap {
+            manifest.srcFile 'froyoGooglemap/AndroidManifest.xml'
+            java.srcDirs = ['froyoGooglemap/java']
         }
-        latest {
-            manifest.srcFile 'latest/AndroidManifest.xml'
-            java.srcDirs = ['latest/java']
+        froyoNomap {
+            manifest.srcFile 'froyoNomap/AndroidManifest.xml' // nomap
+            java.srcDirs = ['froyoNomap/java']
         }
+        latestGooglemap {
+            manifest.srcFile 'latestGooglemap/AndroidManifest.xml'
+            java.srcDirs = ['latestGooglemap/java']
+        }
+        latestNomap {
+            manifest.srcFile 'latestNomap/AndroidManifest.xml'  // nomap
+            java.srcDirs = ['latestNomap/java']
+        }
+        
+        
+        // froyo
+        // latest
+        // googlemap
+        // nomap
+        // froyoGooglemap
+        // froyoNomap
+        // latestGooglemap
+        // latestNomap
+        
+        
     }
+    
+    flavorDimensions "sdk", "map"
 
     productFlavors {
         froyo {
+            flavorDimension "sdk"
             minSdkVersion 8
             targetSdkVersion 18
             versionName "1.43"
             versionCode 8000043 
         }
         latest {
+            flavorDimension "sdk"
             minSdkVersion 14
             targetSdkVersion 20
             versionName "1.43"
             versionCode 14000043
+        }
+        googlemap {
+            flavorDimension "map"
+        }
+        nomap {
+            flavorDimension "map"
         }
     }
 
@@ -66,11 +101,27 @@ android {
 }
 
 dependencies {
-    latestCompile 'com.android.support:support-v4:20.0.0'
-    latestCompile 'com.google.android.gms:play-services:6.1.11'
+    //latestCompile 'com.android.support:support-v4:20.0.0'
+    //latestCompile 'com.google.android.gms:play-services:6.1.11'
 
-    froyoCompile 'com.android.support:support-v4:19.1.+'
-    froyoCompile 'com.google.android.gms:play-services:3.2.65'
+    //froyoCompile 'com.android.support:support-v4:19.1.+'
+    //froyoCompile 'com.google.android.gms:play-services:3.2.65'
+    
+    froyoGooglemapCompile 'com.android.support:support-v4:19.1.+'
+    froyoGooglemapCompile 'com.google.android.gms:play-services:3.2.65'
+    
+    froyoNomapCompile 'com.android.support:support-v4:19.1.+'
+    froyoNomapCompile 'com.google.android.gms:play-services:3.2.65'
+    
+    latestGooglemapCompile 'com.android.support:support-v4:20.0.0'
+    latestGooglemapCompile 'com.google.android.gms:play-services:6.1.11'
+    
+    latestNomapCompile 'com.android.support:support-v4:20.0.0'
+    latestNomapCompile 'com.google.android.gms:play-services:6.1.11'
+    
+    // froyoNomap
+    // latestGooglemap
+    // latestNomap
 
     compile files('../GraphView/public/graphview-3.1.jar')
     
