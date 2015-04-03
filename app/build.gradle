@@ -1,9 +1,76 @@
 apply plugin: 'android-sdk-manager'
 apply plugin: 'com.android.application'
 
+// Based on suggestion by Paweł Stankowski on http://stackoverflow.com/a/22584908
+// global variables
+ext {
+    buildType = ""
+    groupSdk = ""
+    groupMap = ""
+}
+def splitCamelCase(String word) {
+    def result = []
+    int nextStart = 0;
+    for (int i = 1; i < word.length(); i++) {
+        if(word.charAt(i).isUpperCase()) {
+            result.add(word.substring(nextStart, i));
+            nextStart = i;
+        }
+    }
+
+    result.add(word.substring(nextStart));
+    return result;
+}
+
+// start parameters
+println "Start parametes: tasks = " + gradle.startParameter.getTaskNames()
+
+gradle.startParameter.getTaskNames().each { task ->
+
+    // This line is needed to skip other projects' tasks
+    // You can safely remove it if you have only one project
+    if(!task.startsWith(':app:')) return;
+
+    def taskParts = splitCamelCase(task.split(":").last());
+    def groupSdkPrefix = taskParts[taskParts.size() - 4];
+    def groupMapPrefix = taskParts[taskParts.size() - 3];
+    def buildTypePrefix = taskParts[taskParts.size() - 2];
+
+    println taskParts
+    println groupSdkPrefix + "-" + groupMapPrefix + "-" + buildTypePrefix
+
+    if("Debug".startsWith(buildTypePrefix)) {
+        buildType = 'debug';
+    }
+    else if("Release".startsWith(buildTypePrefix)) {
+        buildType = 'release';
+    }
+    else {
+        return; // do not process tasks that are not ending with proper build type.
+    }
+
+    if(groupSdkPrefix == 'Latest') {
+        groupSdk = 'latest';
+    }
+    else if(groupSdkPrefix == 'Froyo') {
+        groupSdk = 'froyo';
+    }
+
+    if("Gmap".startsWith(groupMapPrefix)) {
+        groupMap = 'gmap';
+    }
+    else if("Nomap".startsWith(groupMapPrefix)) {
+        groupMap = 'nomap';
+    }
+
+    println "buildType: " + buildType + ", groupSdk: " + groupSdk + ", groupMap: " + groupMap
+}
+
 android {
     compileSdkVersion 20
     buildToolsVersion '20.0.0'
+
+    flavorDimensions "sdk", "map"
 
     sourceSets {
         main {
@@ -16,28 +83,40 @@ android {
             assets.srcDirs = ['assets']
         }
 
-        froyo {
-            manifest.srcFile 'froyo/AndroidManifest.xml'
-            java.srcDirs = ['froyo/java']
+        froyoGmap {
+            manifest.srcFile 'froyoGmap/AndroidManifest.xml'
+            java.srcDirs = ['froyoGmap/java']
         }
-        latest {
-            manifest.srcFile 'latest/AndroidManifest.xml'
-            java.srcDirs = ['latest/java']
+        latestGmap {
+            manifest.srcFile 'latestGmap/AndroidManifest.xml'
+            java.srcDirs = ['latestGmap/java']
+        }
+        nomap {
+            manifest.srcFile 'nomap/AndroidManifest.xml'
+            java.srcDirs = ['nomap/java']
         }
     }
 
     productFlavors {
         froyo {
+            flavorDimension "sdk"
             minSdkVersion 8
             targetSdkVersion 18
             versionName "1.43"
             versionCode 8000043 
         }
         latest {
+            flavorDimension "sdk"
             minSdkVersion 14
             targetSdkVersion 20
             versionName "1.43"
             versionCode 14000043
+        }
+        gmap {
+            flavorDimension "map"
+        }
+        nomap {
+            flavorDimension "map"
         }
     }
 
@@ -66,11 +145,25 @@ android {
 }
 
 dependencies {
-    latestCompile 'com.android.support:support-v4:20.0.0'
-    latestCompile 'com.google.android.gms:play-services:6.1.11'
 
-    froyoCompile 'com.android.support:support-v4:19.1.+'
-    froyoCompile 'com.google.android.gms:play-services:3.2.65'
+    // For latest with gmap: use latest SDK (for Wear support) and use play-services
+    // latestGmapCompile 'com.android.support:support-v4:20.0.0'
+    // latestGmapCompile 'com.google.android.gms:play-services:6.1.11'
+    if (groupSdk == 'latest' && groupMap == 'gmap') {
+        compile 'com.android.support:support-v4:20.0.0'
+        compile 'com.google.android.gms:play-services:6.1.11'
+    }
+
+    // For froyo with gmap: use older SDK and use play-services
+    // froyoGmapCompile 'com.android.support:support-v4:19.1.+'
+    // froyoGmapCompile 'com.google.android.gms:play-services:3.2.65'
+    if (groupSdk == 'froyo' && groupMap == 'gmap') {
+        compile 'com.android.support:support-v4:19.1.+'
+        compile 'com.google.android.gms:play-services:3.2.65'
+    }
+
+    // For nomap: we can use older SDK
+    nomapCompile 'com.android.support:support-v4:19.1.+'
 
     compile files('../GraphView/public/graphview-3.1.jar')
     
