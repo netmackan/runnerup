@@ -4,9 +4,7 @@ apply plugin: 'com.android.application'
 // Based on suggestion by Paweł Stankowski on http://stackoverflow.com/a/22584908
 // global variables
 ext {
-    buildType = ""
-    groupSdk = ""
-    groupMap = ""
+    taskParts = Collections.emptySet();
 }
 def splitCamelCase(String word) {
     def result = []
@@ -31,39 +29,17 @@ gradle.startParameter.getTaskNames().each { task ->
     // You can safely remove it if you have only one project
     if(!task.startsWith(':app:')) return;
 
-    def taskParts = splitCamelCase(task.split(":").last());
-    def groupSdkPrefix = taskParts[taskParts.size() - 4];
-    def groupMapPrefix = taskParts[taskParts.size() - 3];
-    def buildTypePrefix = taskParts[taskParts.size() - 2];
+    taskParts = new HashSet(splitCamelCase(task.split(":").last()));
 
     println taskParts
-    println groupSdkPrefix + "-" + groupMapPrefix + "-" + buildTypePrefix
 
-    if("Debug".startsWith(buildTypePrefix)) {
-        buildType = 'debug';
-    }
-    else if("Release".startsWith(buildTypePrefix)) {
-        buildType = 'release';
-    }
-    else {
+    println "" + taskParts.contains("Froyo").toString() + ":" + taskParts.contains("Latest").toString()
+
+    if (!taskParts.contains("Debug") && !taskParts.contains("Release")) {
+        println "????????????????????"
+        aasdas;
         return; // do not process tasks that are not ending with proper build type.
     }
-
-    if(groupSdkPrefix == 'Latest') {
-        groupSdk = 'latest';
-    }
-    else if(groupSdkPrefix == 'Froyo') {
-        groupSdk = 'froyo';
-    }
-
-    if("Gmap".startsWith(groupMapPrefix)) {
-        groupMap = 'gmap';
-    }
-    else if("Nomap".startsWith(groupMapPrefix)) {
-        groupMap = 'nomap';
-    }
-
-    println "buildType: " + buildType + ", groupSdk: " + groupSdk + ", groupMap: " + groupMap
 }
 
 android {
@@ -90,6 +66,10 @@ android {
         latestGmap {
             manifest.srcFile 'latestGmap/AndroidManifest.xml'
             java.srcDirs = ['latestGmap/java']
+        }
+        gmap {
+            manifest.srcFile 'gmap/AndroidManifest.xml'
+            java.srcDirs = ['gmap/java']
         }
         nomap {
             manifest.srcFile 'nomap/AndroidManifest.xml'
@@ -149,21 +129,38 @@ dependencies {
     // For latest with gmap: use latest SDK (for Wear support) and use play-services
     // latestGmapCompile 'com.android.support:support-v4:20.0.0'
     // latestGmapCompile 'com.google.android.gms:play-services:6.1.11'
-    if (groupSdk == 'latest' && groupMap == 'gmap') {
+    if (taskParts.contains('Latest') && !taskParts.contains('Nomap')) {
         compile 'com.android.support:support-v4:20.0.0'
         compile 'com.google.android.gms:play-services:6.1.11'
+        latestCompile 'com.google.android.gms:play-services:6.1.11'
     }
+
 
     // For froyo with gmap: use older SDK and use play-services
     // froyoGmapCompile 'com.android.support:support-v4:19.1.+'
     // froyoGmapCompile 'com.google.android.gms:play-services:3.2.65'
-    if (groupSdk == 'froyo' && groupMap == 'gmap') {
+    if (taskParts.contains('Froyo') && !taskParts.contains('Nomap')) {
         compile 'com.android.support:support-v4:19.1.+'
         compile 'com.google.android.gms:play-services:3.2.65'
+        froyoCompile 'com.google.android.gms:play-services:3.2.65'
     }
+
+    //compile 'com.google.android.gms:play-services:3.2.65'
 
     // For nomap: we can use older SDK
     nomapCompile 'com.android.support:support-v4:19.1.+'
+
+    // Workaround for the IDE
+    //if ((!taskParts.contains('Gmap') && !taskParts.contains('Nomap'))) {
+    //if (taskParts.isEmpty()) {
+    //if (true) {
+    //    compile 'com.google.android.gms:play-services:3.2.65'
+    //    println "!!!!!!!!!!!!!!!!!!!!!!!!!!!: " + taskParts
+    //}
+
+    //if (false) {
+    //    compile 'com.google.android.gms:play-services:6.1.11'
+    //}
 
     compile files('../GraphView/public/graphview-3.1.jar')
     

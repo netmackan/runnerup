@@ -26,8 +26,6 @@ import android.os.Build;
 import android.preference.DialogPreference;
 import android.util.AttributeSet;
 
-import com.google.android.gms.common.GooglePlayServicesUtil;
-
 import org.runnerup.R;
 
 @TargetApi(Build.VERSION_CODES.FROYO)
@@ -56,8 +54,7 @@ public class AboutPreference extends DialogPreference {
         }
         String str = res.getString(R.string.google_play_services_legal_notices);
         if (str.contentEquals(this.getTitle())) {
-            CharSequence msg = GooglePlayServicesUtil.getOpenSourceSoftwareLicenseInfo(this
-                    .getContext());
+            CharSequence msg = new AboutMapProvider().getAboutText(this.getContext());
             if (msg != null) {
                 this.setDialogMessage(msg);
             }
